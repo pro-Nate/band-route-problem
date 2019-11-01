@@ -35,22 +35,21 @@ tr {
 
 		<h1>Tour planner</h1>
 
-		<table id="route-table">
-			<thead>
-				<tr>
-				  <th>Venue</th>
-				  <th>distance</th>
-				</tr>
-			</thead>
-			<tbody>
-			</tbody>
-		</table>
+		<div id="route-graph"></div>
+		
+		<div id="route-table"></div>
 		
 	</div>
 </div>
 
 
-<script src="challenge-data.js"></script>
+
+<!-- Use d3.js library for data visualisation -->    
+<script src="https://d3js.org/d3.v5.min.js"></script>
+<script src="js/plot-scatter-graph.d3.js"></script>
+<script src="js/lfl-challenge-data.js"></script>
+
+
 
 <script>
 	const distance2D = (a, b)=> Math.sqrt( 
@@ -58,6 +57,7 @@ tr {
 			+ Math.pow(Math.abs(b.y) - Math.abs(a.y), 2) 
 		);
 	const sortByProp = (prop)=> (a, b)=> a[prop] - b[prop];
+	
 	
 	class TourVenue {
 		constructor (location, index, venueList) {
@@ -78,6 +78,7 @@ tr {
 		}
 	}
 	
+	
 	class TourRoutePlanner {
 		constructor (data) {
 			this.venues = data
@@ -88,7 +89,8 @@ tr {
 			
 			console.log("TourRoutePlanner:", this);
 			
-			this.printRoute();
+			this.printRoute("#route-table");
+			this.drawRoute("#route-graph");
 		}
 		
 		buildRoute() {
@@ -130,34 +132,57 @@ tr {
 			return this.locationMatchesVenue(location, this.home)
 		}
 		
-		printRoute() {
-			const outputTable = document.querySelector("#route-table");
-			const tableBody = outputTable.querySelector("tbody");
+		printRoute(outputSelector) {
+			const outputTable = document.createElement("table");
+			const tableHead = document.createElement("thead");
+			const tableBody = document.createElement("tbody");
 			let totalDistance = 0;
 			
+			tableHead.appendChild(createRow("Venue", "Distance", "th"));
 			this.route.forEach((stage)=> {
-				insertRow(stage.to.name, stage.distance);
+				tableBody.appendChild(createRow(stage.to.name, stage.distance));
 				totalDistance += stage.distance;
 			});
-			insertRow("Total Distance: ", totalDistance.toFixed(2));
+			tableBody.appendChild(createRow("Total Distance: ", totalDistance.toFixed(2)));
 			
-			function insertRow(venue, distance) {
+			outputTable.appendChild(tableHead);
+			outputTable.appendChild(tableBody);
+			document.querySelector(outputSelector).appendChild(outputTable);
+			
+			function createRow(venue, distance, cellType) {
 				let row = document.createElement("tr");
-				let venueCell = document.createElement("td");
-				let distanceCell = document.createElement("td");
+				let venueCell = document.createElement(cellType || "td");
+				let distanceCell = document.createElement(cellType || "td");
 				venueCell.innerHTML = venue;
 				distanceCell.innerHTML = distance;
 				row.appendChild(venueCell);
 				row.appendChild(distanceCell);
-				tableBody.appendChild(row);
+				return row;
 			}
+		}
+		
+		drawRoute(outputSelector) {
+			let data = [], paths = [];
+			
+			for(var r=this.route, i=0, l=r.length; i < l; i++) {
+			 	if (i===0) {
+			 		data.push({x: r[i].from.location.x, y: r[i].from.location.y, label: r[i].from.name});
+			 		paths.push({x: r[i].from.location.x, y: r[i].from.location.y});
+			 	}
+			 	if (i!==l-1) {
+			 		data.push({x: r[i].to.location.x, y: r[i].to.location.y, label: r[i].to.name});
+				}
+				paths.push({x: r[i].to.location.x, y: r[i].to.location.y});
+			}
+			plotScatterGraph(outputSelector, data, paths);
 		}
 		
 	}
 	
-	new TourRoutePlanner(points200);
+	new TourRoutePlanner(points40);
 </script>
-	
+
+
 <script>
 	/*function getAllPossibleRoutes(array) {
 		var result = [];
