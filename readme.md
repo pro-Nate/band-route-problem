@@ -27,4 +27,17 @@ If you have questions on the challenge, please contact Jared Sartin: jared@leftf
 
 # Candidate Notes:
 
-### Fill in comments, external tool usage, and time tracking
+Current algorithm calculates route by repeatedly finding next nearest venue until all venues have been visited, then gives distance to home.
+
+A brute force approach to finding shortest route was too resource intensive.
+I might attempt an improved algorith if time allows.
+
+Libraries used:
+
+* None (although the default.css is copied from another one of my excercises in git)
+
+Time used:
+
+* ~1 hour researching the problem 
+* ~2.5 hours implementing solution
+

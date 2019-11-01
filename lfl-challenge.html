@@ -1,0 +1,180 @@
+<html>
+<head>
+<title>Tour planner challenge | N Johnson</title>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+<link rel="stylesheet" type="text/css" href="css/default.css" />
+
+<style>
+.container {
+	width: 600px;
+	min-width: 500px;
+}
+
+table {
+	width: 100%;
+}
+th,
+td {
+  text-align: left;
+  padding: 0.5em 1em;
+}
+th {
+  background-color: #555;
+  color: #fff;
+  white-space: nowrap;
+}
+tr {
+  border-bottom: 1px solid;
+}
+</style>
+</head>
+<body>
+
+<div class="wrapper">
+	<div class="container">
+
+		<h1>Tour planner</h1>
+
+		<table id="route-table">
+			<thead>
+				<tr>
+				  <th>Venue</th>
+				  <th>distance</th>
+				</tr>
+			</thead>
+			<tbody>
+			</tbody>
+		</table>
+		
+	</div>
+</div>
+
+
+<script src="challenge-data.js"></script>
+
+<script>
+	const distance2D = (a, b)=> Math.sqrt( 
+			Math.pow(Math.abs(b.x) - Math.abs(a.x), 2) 
+			+ Math.pow(Math.abs(b.y) - Math.abs(a.y), 2) 
+		);
+	const sortByProp = (prop)=> (a, b)=> a[prop] - b[prop];
+	
+	class TourVenue {
+		constructor (location, index, venueList) {
+			this.location = location;
+			this.name = index === 0? "Home" : `Venue #${index}`;
+			this.nearestVenues = venueList
+				.filter((v,i)=> i!==index)
+				.map((venue, i)=> ({
+					x: venue.x,
+					y: venue.y,
+					distance: this.distanceFrom(venue)
+				}))
+				.sort(sortByProp("distance"))
+		}
+		
+		distanceFrom (otherLocation) {
+			return Number(distance2D(this.location, otherLocation).toFixed(1))
+		}
+	}
+	
+	class TourRoutePlanner {
+		constructor (data) {
+			this.venues = data
+				.map((value, index, array)=>  new TourVenue(value, index, array));
+			this.home = this.venues.splice(0,1)[0];
+			
+			this.route = this.buildRoute();
+			
+			console.log("TourRoutePlanner:", this);
+			
+			this.printRoute();
+		}
+		
+		buildRoute() {
+			const tour = [];
+			const isAlreadyInTour = (location)=> {
+				return  this.locationIsHome(location) 
+					|| tour.filter((v,i)=> this.locationMatchesVenue(location, v.to)).length;
+			}
+			const nextGig = (currentVenue)=> {
+				for (let l, v=0; v < currentVenue.nearestVenues.length; v++) {
+					l = currentVenue.nearestVenues[v];
+					if (!isAlreadyInTour(l)) {
+						return {
+							from: currentVenue,
+							to: this.venues.filter((v,i)=> this.locationMatchesVenue(l, v))[0],
+							distance: l.distance
+						};
+					}
+				}
+			}
+			
+			tour.push(nextGig(this.home));
+			while (tour.length < this.venues.length) {
+				tour.push( nextGig(tour[tour.length-1].to) );
+			}
+			tour.push({
+				from: tour[tour.length-1].to,
+				to: this.home,
+				distance: this.home.distanceFrom(tour[tour.length-1].to.location)
+			});
+			return tour;
+		}
+			
+		locationMatchesVenue(location, venue) {
+			return venue.location.x===location.x && venue.location.y ===location.y
+		}
+		
+		locationIsHome(location) {
+			return this.locationMatchesVenue(location, this.home)
+		}
+		
+		printRoute() {
+			const outputTable = document.querySelector("#route-table");
+			const tableBody = outputTable.querySelector("tbody");
+			let totalDistance = 0;
+			
+			this.route.forEach((stage)=> {
+				insertRow(stage.to.name, stage.distance);
+				totalDistance += stage.distance;
+			});
+			insertRow("Total Distance: ", totalDistance.toFixed(2));
+			
+			function insertRow(venue, distance) {
+				let row = document.createElement("tr");
+				let venueCell = document.createElement("td");
+				let distanceCell = document.createElement("td");
+				venueCell.innerHTML = venue;
+				distanceCell.innerHTML = distance;
+				row.appendChild(venueCell);
+				row.appendChild(distanceCell);
+				tableBody.appendChild(row);
+			}
+		}
+		
+	}
+	
+	new TourRoutePlanner(points200);
+</script>
+	
+<script>
+	/*function getAllPossibleRoutes(array) {
+		var result = [];
+		
+		function calcPermutations(array, temp) {
+		  if (!array.length) 
+		  	return result.push(temp);
+		  for (var x, i = 0; i < array.length; i++) {
+			x = array.splice(i, 1)[0];
+			permutations(array, temp.concat(x));
+			array.splice(i, 0, x);
+		  }
+		}
+
+		calcPermutations(array, []);
+		return result;
+	}*/
+</script>
+</body>
+</html>
